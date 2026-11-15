@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orthogonal flow on SO(3)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+/* layout: journal-style header, then a figure column (the ball) beside an instrument panel (cost, matrices, controls); stacks below 880px */
+--paper:#f4f5f7;--sheet:#ffffff;--ink:#14171c;--ink-2:#4a515c;--ink-3:#868c97;--rule:#dadde3;--accent:#2a6fd0;
+--k-identity:#2a78d6;--k-cycle:#eb6834;--k-swap:#1baf7a;--pos:#2a78d6;--neg:#e34948;--grid:#d4d7de;
+--f-display:"STIX Two Text","Times New Roman",Times,serif;--f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0e1013;--sheet:#16191d;--ink:#e8eaee;--ink-2:#b3b8c2;--ink-3:#7c828d;--rule:#2a2e35;--accent:#6aa5f0;--k-identity:#3987e5;--k-cycle:#d95926;--k-swap:#199e70;--pos:#3987e5;--neg:#e66767;--grid:#30343b;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0e1013;--sheet:#16191d;--ink:#e8eaee;--ink-2:#b3b8c2;--ink-3:#7c828d;--rule:#2a2e35;--accent:#6aa5f0;--k-identity:#3987e5;--k-cycle:#d95926;--k-swap:#199e70;--pos:#3987e5;--neg:#e66767;--grid:#30343b;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:32px 20px 48px}
+header{display:grid;gap:10px;margin-bottom:28px;max-width:760px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;color:var(--ink-3);margin:0}
+h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2rem,4.5vw,3rem);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h2{font-family:var(--f-display);font-weight:500;font-size:1.2rem;margin:0 0 6px;text-wrap:balance}
+.dek{font-size:1.05rem;color:var(--ink-2);margin:0;max-width:65ch}
+.links{font-size:14px;color:var(--ink-3);margin:2px 0 0;display:flex;flex-wrap:wrap;gap:4px 16px}
+.m{font-family:var(--f-display);font-style:italic}
+.stage{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr);gap:32px;align-items:start}
+@media (max-width:880px){.stage{grid-template-columns:1fr;gap:20px}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2);margin:0 0 6px}
+.legend span{display:flex;align-items:center;gap:6px}
+.ballbox{position:relative;width:100%;max-width:560px;aspect-ratio:1/1;margin:0 auto}
+.ballbox canvas,.cv canvas{position:absolute;inset:0;width:100%;height:100%}
+#ball{touch-action:none;cursor:grab;border-radius:50%}
+#ball:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.hint{font-size:12px;color:var(--ink-3);text-align:center;margin:4px 0 14px}
+.cv{position:relative}
+.cap{font-size:12px;color:var(--ink-3);margin:2px 0 0}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:20px;display:grid;gap:18px}
+.arrive{font-size:14px;color:var(--ink-2);line-height:1.55;min-height:66px;margin:0}
+.arrive b{font-weight:600;color:var(--ink)}
+.cost{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.lab{font-size:12px;color:var(--ink-3);margin:0}
+.big{font-family:var(--f-display);font-size:46px;line-height:1;font-variant-numeric:tabular-nums lining-nums;margin:4px 0}
+.mono{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.mats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.mhead{font-family:var(--f-display);font-size:18px;margin:0 0 6px}
+.mhead small{font-family:var(--f-body);font-size:12px;color:var(--ink-3);font-style:normal;margin-left:6px}
+.matrix{position:relative;display:grid;gap:3px;padding:2px 9px}
+.matrix::before,.matrix::after{content:"";position:absolute;top:0;bottom:0;width:6px;border:1.5px solid var(--ink)}
+.matrix::before{left:0;border-right:none}
+.matrix::after{right:0;border-left:none}
+.matrix span{font-family:var(--f-mono);font-size:12.5px;text-align:center;padding:6px 0;border-radius:3px;font-variant-numeric:tabular-nums}
+.ctl{display:grid;gap:12px}
+.row{display:flex;align-items:center;gap:12px}
+.row label{font-size:14px;color:var(--ink-2);white-space:nowrap}
+.row output{font-family:var(--f-mono);font-size:13px;min-width:42px;text-align:right}
+input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:500 14px var(--f-body);color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:8px 14px;cursor:pointer}
+button:hover{background:var(--paper)}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{border-color:var(--ink);}
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:40px;padding-top:24px;border-top:1px solid var(--rule)}
+@media (max-width:880px){.notes{grid-template-columns:1fr;gap:18px}}
+.notes p{margin:0;font-size:15px;color:var(--ink-2);max-width:65ch}
+footer{margin-top:32px;font-size:13px;color:var(--ink-3);max-width:760px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<p class="eyebrow">n = 3 · 24 stationary rotations · Cayley–Armijo flow</p>
+<h1>Orthogonal flow on SO(3)</h1>
+<p class="dek">Gradient flow of <span class="m">E</span>(<span class="m">Q</span>) = ⅓ Σ <span class="m">C<sub>ij</sub> Q<sub>ij</sub></span>² over 3 × 3 rotations. Each run starts from one random rotation and follows the flow until <span class="m">Q</span> becomes a signed permutation; its square <span class="m">P</span> = <span class="m">Q</span> ⊙ <span class="m">Q</span> is the coupling it finds.</p>
+<p class="links"><a href="https://www.gpeyre.com/blog/2026/11/15/orthostochastic-matrices/">Gabriel Peyré, Orthostochastic matrices</a><a href="https://claude.ai/artifact/Tj8K9oSYvWfPpYKGnGzQHD">The same flow on SO(2)</a></p>
+</header>
+
+<main class="stage">
+<section aria-label="Rotation ball">
+<div class="legend" id="leg"></div>
+<div class="ballbox"><canvas id="ball" tabindex="0" role="img" aria-label="Rotation-vector ball of SO(3) with one flow path from a start to its arrival rotation. Drag or use arrow keys to turn it."></canvas></div>
+<p class="hint">Drag or use the arrow keys to turn the ball. Direction = rotation axis, distance from center = angle, rim = 180°.</p>
+<div class="cv" style="height:104px"><canvas id="strip" role="img" aria-label="Rotation angle of each kind of stationary point: identity at 0 and 180 degrees, cycles at 120, swaps at 90 and 180; a cursor shows the moving point's angle"></canvas></div>
+<p class="cap">Rotation angle of the stationary points. The cursor tracks the moving rotation.</p>
+</section>
+
+<aside class="panel" aria-label="Flow readout and controls">
+<p class="arrive" id="inf"></p>
+<div class="cost">
+<div><p class="lab">Cost <span class="m">E</span>(<span class="m">Q<sub>t</sub></span>)</p><div class="big" id="ev">–</div><div class="mono" id="eg"></div></div>
+<div class="cv" style="height:92px"><canvas id="spk" role="img" aria-label="Cost E(Q_t) along the flow with the optimal assignment cost dashed"></canvas></div>
+</div>
+<div class="mats">
+<div><p class="mhead"><span class="m">Q<sub>t</sub></span></p><div class="matrix" id="mq" style="grid-template-columns:repeat(3,minmax(0,1fr))" role="img" aria-label="Current rotation matrix Q_t"></div><p class="lab" style="margin-top:6px">Rotation · blue +, red −</p></div>
+<div><p class="mhead"><span class="m">P<sub>t</sub></span></p><div class="matrix" id="mp" style="grid-template-columns:repeat(3,minmax(0,1fr))" role="img" aria-label="Current coupling matrix P_t"></div><p class="lab" style="margin-top:6px">Coupling = Q ⊙ Q</p></div>
+</div>
+<div class="ctl">
+<div class="row"><label for="th">Target rotation <span class="m">θ</span></label><input type="range" id="th" min="0" max="180" step="1" value="75"><output id="thv" for="th">75°</output></div>
+<div class="btns">
+<button id="bn" class="primary">New start</button>
+<button id="bi">Start near identity</button>
+<button id="br">Replay</button>
+</div>
+</div>
+</aside>
+</main>
+
+<section class="notes" aria-label="How to read it">
+<div><h2>Where the markers sit</h2><p>A rotation by angle <span class="m">a</span> has trace 1 + 2 cos <span class="m">a</span>. For a signed permutation the trace only counts the signs on indices the permutation fixes. Cycles fix none, so they sit at 120°. Swaps fix one, so they sit at 90° or on the rim at 180°. The identity fixes all three: the center, or a half-turn on the rim. Opposite rim points are the same rotation.</p></div>
+<div><h2>The axes</h2><p><span class="m">ω</span><sub>1</sub>, <span class="m">ω</span><sub>2</sub>, <span class="m">ω</span><sub>3</sub> are rotation-vector coordinates, centered on the identity. Moving along <span class="m">ω<sub>k</sub></span> turns the plane of the other two indices, so it trades mass between those two points while point <span class="m">k</span> keeps its match. A quarter-turn gives their swap.</p></div>
+<div><h2>Twins and traps</h2><p><span class="m">E</span> only sees <span class="m">Q<sub>ij</sub></span>², so flipping the signs of rows or columns leaves it unchanged. The four rotations that share a coupling are therefore the same kind of stationary point. For 60° &lt; <span class="m">θ</span> &lt; 90° the identity is a strict local minimum that is not optimal, and some starts end there.</p></div>
+</section>
+
+<footer>Cost: three points on the unit circle, targets rotated by <span class="m">θ</span>, squared distances. At 75° this is the post's local-minimum example. The flow uses the Cayley retraction with Armijo backtracking, as in the post.</footer>
+</div>
+
+<script>
+(function(){
+const root=document.documentElement,RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tok=n=>getComputedStyle(root).getPropertyValue(n).trim();
+let T;function readTheme(){T={ink:tok('--ink'),ink3:tok('--ink-3'),grid:tok('--grid'),paper:tok('--paper'),sheet:tok('--sheet'),kc:[tok('--k-identity'),tok('--k-cycle'),tok('--k-swap')]};}
+readTheme();
+const KN=['identity','cycle','swap'];
+const PERMS=[[0,1,2],[1,2,0],[2,0,1],[1,0,2],[2,1,0],[0,2,1]];
+const PN=['identity','cycle i→i+1','cycle i→i−1','swap 1↔2','swap 1↔3','swap 2↔3'];
+const KIND=[0,1,1,2,2,2];
+const m3=(A,B)=>{const C=[[0,0,0],[0,0,0],[0,0,0]];for(let i=0;i<3;i++)for(let k=0;k<3;k++)for(let j=0;j<3;j++)C[i][j]+=A[i][k]*B[k][j];return C;};
+const tr3=A=>[[A[0][0],A[1][0],A[2][0]],[A[0][1],A[1][1],A[2][1]],[A[0][2],A[1][2],A[2][2]]];
+function inv3(A){const[a,b,c]=A[0],[d,e,f]=A[1],[g,h,i]=A[2];const D=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);
+return[[(e*i-f*h)/D,(c*h-b*i)/D,(b*f-c*e)/D],[(f*g-d*i)/D,(a*i-c*g)/D,(c*d-a*f)/D],[(d*h-e*g)/D,(b*g-a*h)/D,(a*e-b*d)/D]];}
+const det3=A=>A[0][0]*(A[1][1]*A[2][2]-A[1][2]*A[2][1])-A[0][1]*(A[1][0]*A[2][2]-A[1][2]*A[2][0])+A[0][2]*(A[1][0]*A[2][1]-A[1][1]*A[2][0]);
+let C,COST,BEST;
+const En=Q=>{let e=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++)e+=C[i][j]*Q[i][j]*Q[i][j];return e/3;};
+function Om(Q){const G=Q.map((r,i)=>r.map((v,j)=>2*C[i][j]*v)),M=m3(tr3(Q),G);return M.map((r,i)=>r.map((v,j)=>(v-M[j][i])/2));}
+const I3=()=>[[1,0,0],[0,1,0],[0,0,1]];
+function cay(Q,W,h){const A=I3().map((r,i)=>r.map((v,j)=>v+h/2*W[i][j])),B=I3().map((r,i)=>r.map((v,j)=>v-h/2*W[i][j]));return m3(Q,m3(inv3(A),B));}
+function logv(Q){const c=Math.max(-1,Math.min(1,(Q[0][0]+Q[1][1]+Q[2][2]-1)/2)),a=Math.acos(c);if(a<1e-9)return[0,0,0];
+if(Math.PI-a<1e-6){const B=Q.map((r,i)=>r.map((v,j)=>(v+(i===j?1:0))/2));let k=0;for(let i=1;i<3;i++)if(B[i][i]>B[k][k])k=i;const ax=B[k].slice(),nn=Math.hypot(...ax);return ax.map(v=>v/nn*a);}
+const s=2*Math.sin(a);return[(Q[2][1]-Q[1][2])/s*a,(Q[0][2]-Q[2][0])/s*a,(Q[1][0]-Q[0][1])/s*a];}
+function rodr(w){const a=Math.hypot(...w);if(a<1e-12)return I3();const k=w.map(v=>v/a),K=[[0,-k[2],k[1]],[k[2],0,-k[0]],[-k[1],k[0],0]],K2=m3(K,K);return I3().map((r,i)=>r.map((v,j)=>v+Math.sin(a)*K[i][j]+(1-Math.cos(a))*K2[i][j]));}
+function haar(){const u=[Math.random(),Math.random(),Math.random()],x=Math.sqrt(1-u[0])*Math.sin(2*Math.PI*u[1]),y=Math.sqrt(1-u[0])*Math.cos(2*Math.PI*u[1]),z=Math.sqrt(u[0])*Math.sin(2*Math.PI*u[2]),w=Math.sqrt(u[0])*Math.cos(2*Math.PI*u[2]);
+return[[1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w)],[2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w)],[2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y)]];}
+function setCost(td){const t=td*Math.PI/180,XP=[0,1,2].map(k=>{const a=Math.PI/2+2*Math.PI*k/3;return[Math.cos(a),Math.sin(a)];}),YP=XP.map(([a,b])=>[Math.cos(t)*a-Math.sin(t)*b,Math.sin(t)*a+Math.cos(t)*b]);
+C=XP.map(a=>YP.map(b=>(a[0]-b[0])**2+(a[1]-b[1])**2));COST=PERMS.map(s=>(C[0][s[0]]+C[1][s[1]]+C[2][s[2]])/3);BEST=COST.indexOf(Math.min(...COST));}
+const ST=[];PERMS.forEach((s,k)=>{for(let m=0;m<8;m++){const sg=[m&1?-1:1,m&2?-1:1,m&4?-1:1],Q=[[0,0,0],[0,0,0],[0,0,0]];for(let i=0;i<3;i++)Q[i][s[i]]=sg[i];
+if(det3(Q)<0)continue;const w=logv(Q),a=Math.hypot(...w),o={c:k,w,a,Q};ST.push(o);if(Math.PI-a<1e-6)ST.push({c:k,w:w.map(v=>-v),a,Q,twin:o});}});
+function nearestStat(Q){let b=null,bd=1e9;for(const o of ST){if(o.twin)continue;let d=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++)d+=(Q[i][j]-o.Q[i][j])**2;if(d<bd){bd=d;b=o;}}return b;}
+let Q0,Qs=[],Es=[],Ts=[],path=[],arr=null,k=0,anim=null,yaw=0.7,pitch=0.4;
+function run(){let Q=Q0,h=0.02,tt=0;path=[logv(Q)];Qs=[Q];Es=[En(Q)];Ts=[0];
+for(let it=0;it<8000;it++){const W=Om(Q);let g=0;for(const r of W)for(const v of r)g+=v*v;if(g<1e-14)break;const e=En(Q);let hh=Math.min(0.06,h*2),Qn;
+for(let b=0;b<30;b++){Qn=cay(Q,W,hh);if(En(Qn)<=e-1e-4*hh*g/3)break;hh/=2;}h=hh;Q=Qn;tt+=hh;path.push(logv(Q));Qs.push(Q);Es.push(En(Q));Ts.push(tt);}
+arr=nearestStat(Q);const end=arr.w;let cut=path.length;for(let i=0;i<path.length;i++){const p=path[i],d1=Math.hypot(p[0]-end[0],p[1]-end[1],p[2]-end[2]),d2=Math.hypot(p[0]+end[0],p[1]+end[1],p[2]+end[2]);if(Math.min(d1,arr.a>3.1?d2:9)<0.003){cut=i+1;break;}}
+path=path.slice(0,cut);Qs=Qs.slice(0,cut);Es=Es.slice(0,cut);Ts=Ts.slice(0,cut);play();}
+function play(){cancelAnimationFrame(anim);if(RM){k=path.length-1;draw();return;}k=0;const t0=performance.now(),D=3400;const step=now=>{k=Math.max(0,Math.min(path.length-1,Math.floor((now-t0)/D*(path.length-1))));draw();if(k<path.length-1)anim=requestAnimationFrame(step);};anim=requestAnimationFrame(step);}
+function proj(w,s,cx,cy){const c1=Math.cos(yaw),s1=Math.sin(yaw),c2=Math.cos(pitch),s2=Math.sin(pitch);const x1=c1*w[0]+s1*w[2],z1=-s1*w[0]+c1*w[2];return[cx+s*x1,cy-s*(c2*w[1]-s2*z1),s2*w[1]+c2*z1];}
+function shape(x,kd,px,py,r){x.beginPath();if(kd===0)x.arc(px,py,r,0,7);else if(kd===1){x.moveTo(px,py-r*1.15);x.lineTo(px+r*1.1,py+r*0.8);x.lineTo(px-r*1.1,py+r*0.8);x.closePath();}else x.rect(px-r*0.9,py-r*0.9,r*1.8,r*1.8);}
+function fit(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;if(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);}const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,r.width,r.height);return[x,r.width,r.height];}
+const cv=document.getElementById('ball'),sv=document.getElementById('strip'),spk=document.getElementById('spk');
+const fmtAx=w=>{const a=Math.hypot(...w);if(a<1e-6)return'';const ax=w.map(v=>v/a),m=Math.max(...ax.map(Math.abs));return' about ('+ax.map(v=>{const q=Math.round(v/m*100)/100;return q===0?'0':(q<0?'−':'')+Math.abs(q);}).join(', ')+')';};
+const FONT='12px "Instrument Sans", system-ui, sans-serif';
+const MQ=[],MP=[];for(const[id,a]of[['mq',MQ],['mp',MP]]){const g=document.getElementById(id);for(let i=0;i<9;i++){const e=document.createElement('span');g.appendChild(e);a.push(e);}}
+function draw(){if(!path.length)return;let[x,W,H]=fit(cv);const cx=W/2,cy=H/2,s=(Math.min(W,H)/2-18)/Math.PI;
+x.strokeStyle=T.grid;x.lineWidth=1;x.beginPath();x.arc(cx,cy,s*Math.PI,0,7);x.stroke();x.font=FONT;x.fillStyle=T.ink3;x.textAlign='center';x.textBaseline='middle';
+[[1,0,0],[0,1,0],[0,0,1]].forEach((e,i)=>{const a=proj(e.map(v=>-Math.PI*v),s,cx,cy),b=proj(e.map(v=>Math.PI*v),s,cx,cy);x.setLineDash([2,4]);x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke();x.setLineDash([]);const l=proj(e.map(v=>1.08*Math.PI*v),s,cx,cy);x.fillText('ω'+(i+1),l[0],l[1]);});
+const pts=ST.map(o=>({o,p:proj(o.w,s,cx,cy)})).sort((a,b)=>a.p[2]-b.p[2]);const mr=Math.max(4,Math.min(6,W/90));
+for(const{o,p}of pts){const kd=KIND[o.c],hit=arr&&o.c===arr.c;x.globalAlpha=(hit?1:0.5)*(p[2]<0?0.6:1);shape(x,kd,p[0],p[1],hit?mr*1.5:mr);
+if(hit){x.fillStyle=T.kc[kd];x.fill();x.strokeStyle=T.paper;x.lineWidth=1.5;x.stroke();}else{x.strokeStyle=T.kc[kd];x.lineWidth=1.25;x.stroke();}}
+x.globalAlpha=1;x.strokeStyle=T.ink;x.lineWidth=2.25;x.lineCap='round';x.lineJoin='round';x.beginPath();for(let i=0;i<=k;i++){const p=proj(path[i],s,cx,cy);if(i&&Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1],path[i][2]-path[i-1][2])>Math.PI)x.moveTo(p[0],p[1]);else i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}x.stroke();
+const p0=proj(path[0],s,cx,cy);x.beginPath();x.arc(p0[0],p0[1],5.5,0,7);x.fillStyle=T.paper;x.fill();x.lineWidth=2;x.stroke();x.fillStyle=T.ink;x.textAlign='left';x.fillText('start',p0[0]+9,p0[1]-9);
+const pk=proj(path[k],s,cx,cy);x.beginPath();x.arc(pk[0],pk[1],4,0,7);x.fill();
+const done=k>=path.length-1;if(done){for(const w of(arr.a>3.1?[arr.w,arr.w.map(v=>-v)]:[arr.w])){const q=proj(w,s,cx,cy);x.beginPath();x.arc(q[0],q[1],mr*2.2,0,7);x.strokeStyle=T.ink;x.lineWidth=1.5;x.stroke();}}
+const cur=path[k],ca=Math.hypot(...cur)*180/Math.PI;
+document.getElementById('inf').innerHTML=done?('Arrives at <b>'+(arr.a<1e-6?'the identity rotation (center)':'a '+Math.round(arr.a*180/Math.PI)+'° turn'+fmtAx(arr.w))+'</b>, so <span class="m">P</span> is '+PN[arr.c]+', cost '+COST[arr.c].toFixed(3)+(arr.c===BEST?' (optimal)':' (not optimal)')+'. The other filled markers are its three sign-flip twins, which give the same <span class="m">P</span>; rim points show twice.'):('Flowing. Current rotation: '+Math.round(ca)+'°'+fmtAx(cur)+'.');
+[x,W,H]=fit(sv);const L=18,Rr=W-18,X=a=>L+(Rr-L)*a/180,ay=H-22,rows=[0.2,0.5,0.8].map(f=>f*(ay-4));
+x.strokeStyle=T.grid;x.lineWidth=1;x.beginPath();x.moveTo(L,ay+0.5);x.lineTo(Rr,ay+0.5);x.stroke();x.font=FONT;x.fillStyle=T.ink3;x.textBaseline='top';x.textAlign='center';
+for(const a of[0,90,120,180]){x.beginPath();x.moveTo(X(a),ay);x.lineTo(X(a),ay+4);x.stroke();x.fillText(a+'°',X(a),ay+7);}
+for(const[kd,a,n]of[[0,0,1],[0,180,3],[1,120,8],[2,90,6],[2,180,6]]){const px=X(a),py=rows[kd],hit=done&&KIND[arr.c]===kd&&Math.abs(arr.a*180/Math.PI-a)<1;shape(x,kd,px,py,5.5);
+if(hit){x.fillStyle=T.kc[kd];x.fill();x.strokeStyle=T.ink;x.lineWidth=1.5;x.stroke();}else{x.fillStyle=T.paper;x.fill();x.strokeStyle=T.kc[kd];x.lineWidth=1.5;x.stroke();}
+x.fillStyle=T.ink3;x.textBaseline='middle';x.textAlign=a>150?'right':'left';x.fillText('×'+n+' '+KN[kd],a>150?px-11:px+11,py);}
+const cxs=X(Math.min(180,ca));x.strokeStyle=T.ink;x.lineWidth=1.5;x.beginPath();x.moveTo(cxs,2);x.lineTo(cxs,ay);x.stroke();x.beginPath();x.arc(cxs,ay,3.5,0,7);x.fillStyle=T.ink;x.fill();
+const Qk=Qs[k];for(let i=0;i<3;i++)for(let j=0;j<3;j++){const v=Qk[i][j],a=Math.abs(v),c=MQ[i*3+j],p=MP[i*3+j];c.textContent=(v<-0.005?'−':'')+a.toFixed(2);c.style.background=a<0.005?'transparent':'color-mix(in srgb, var('+(v>0?'--pos':'--neg')+') '+Math.round(48*a)+'%, transparent)';
+const P=v*v;p.textContent=P.toFixed(2);p.style.background=P<0.005?'transparent':'color-mix(in srgb, var(--ink) '+Math.round(20*P)+'%, transparent)';}
+const Ek=Es[k];document.getElementById('ev').textContent=Ek.toFixed(3);document.getElementById('eg').textContent='optimal '+COST[BEST].toFixed(3);
+[x,W,H]=fit(spk);const T0=Ts[Ts.length-1]||1;let lo=Math.min(COST[BEST],...Es),hi=Math.max(...Es,COST[BEST]+1e-3);const pd=(hi-lo||1)*0.14;lo-=pd;hi+=pd;
+const sx=t=>5+(W-10)*t/T0,sy=e=>5+(H-10)*(1-(e-lo)/(hi-lo));
+x.setLineDash([4,4]);x.strokeStyle=T.ink3;x.lineWidth=1.25;x.beginPath();x.moveTo(5,sy(COST[BEST]));x.lineTo(W-5,sy(COST[BEST]));x.stroke();x.setLineDash([]);
+x.strokeStyle=T.grid;x.lineWidth=2;x.lineJoin='round';x.beginPath();Es.forEach((e,i)=>{i?x.lineTo(sx(Ts[i]),sy(e)):x.moveTo(sx(Ts[i]),sy(e));});x.stroke();
+x.beginPath();for(let i=0;i<=k;i++){i?x.lineTo(sx(Ts[i]),sy(Es[i])):x.moveTo(sx(Ts[i]),sy(Es[i]));}x.lineTo(sx(Ts[k]),H);x.lineTo(sx(0),H);x.closePath();x.globalAlpha=0.07;x.fillStyle=T.ink;x.fill();x.globalAlpha=1;
+x.strokeStyle=T.ink;x.beginPath();for(let i=0;i<=k;i++){i?x.lineTo(sx(Ts[i]),sy(Es[i])):x.moveTo(sx(Ts[i]),sy(Es[i]));}x.stroke();
+x.beginPath();x.arc(sx(Ts[k]),sy(Ek),4.5,0,7);x.fillStyle=T.ink;x.fill();x.strokeStyle=T.sheet;x.lineWidth=2;x.stroke();}
+function legend(){const sh=(kd,f)=>kd===0?'<svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="'+f+'"/></svg>':kd===1?'<svg width="12" height="12" aria-hidden="true"><path d="M6 1 L11.5 11 L0.5 11 Z" fill="'+f+'"/></svg>':'<svg width="12" height="12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="1.5" fill="'+f+'"/></svg>';
+document.getElementById('leg').innerHTML=KN.map((n,i)=>'<span>'+sh(i,T.kc[i])+n+'</span>').join('')+'<span><svg width="18" height="12" aria-hidden="true"><line x1="1" y1="6" x2="17" y2="6" stroke="'+T.ink+'" stroke-width="2.25" stroke-linecap="round"/></svg>flow path</span><span style="color:var(--ink-3)">filled = where this run lands</span>';}
+legend();
+let drag=null;cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY};});
+cv.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag.x)*0.01;pitch=Math.max(-1.5,Math.min(1.5,pitch+(e.clientY-drag.y)*0.01));drag={x:e.clientX,y:e.clientY};draw();});
+cv.addEventListener('pointerup',()=>drag=null);cv.addEventListener('pointercancel',()=>drag=null);
+cv.addEventListener('keydown',e=>{const d={ArrowLeft:[-0.12,0],ArrowRight:[0.12,0],ArrowUp:[0,-0.12],ArrowDown:[0,0.12]}[e.key];if(!d)return;e.preventDefault();yaw+=d[0];pitch=Math.max(-1.5,Math.min(1.5,pitch+d[1]));draw();});
+const th=document.getElementById('th'),thv=document.getElementById('thv');let pend=false;
+th.addEventListener('input',()=>{thv.textContent=th.value+'°';if(!pend){pend=true;requestAnimationFrame(()=>{pend=false;setCost(+th.value);run();});}});
+document.getElementById('bn').onclick=()=>{Q0=haar();run();};
+document.getElementById('bi').onclick=()=>{const v=[Math.random()-.5,Math.random()-.5,Math.random()-.5],n=Math.hypot(...v);Q0=rodr(v.map(t=>t/n*0.55));run();};
+document.getElementById('br').onclick=play;
+const retheme=()=>{readTheme();legend();draw();};matchMedia('(prefers-color-scheme: dark)').addEventListener('change',retheme);new MutationObserver(retheme).observe(root,{attributes:true,attributeFilter:['data-theme']});
+new ResizeObserver(()=>draw()).observe(document.querySelector('.stage'));
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>draw());
+setCost(75);Q0=haar();run();
+})();
+</script>
+</body>
+</html>
